@@ -163,7 +163,7 @@ if(estimator %in% c("did", "all")) {
 	cli::cli_text("Estimating using Callaway and Sant'Anna (2020)")
 
 	try({
-		est_did = did::att_gt(yname = yname, tname = tname, idname = idname, gname = gname, xformla = xformla, data = data, clustervars = c(cluster_var))
+		est_did = did::att_gt(yname = yname, tname = tname, idname = idname, gname = gname, xformla = xformla, data = data, clustervars = NULL)
 
 		est_did = did::aggte(est_did, type = "dynamic", na.rm = TRUE)
 
