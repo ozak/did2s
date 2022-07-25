@@ -217,7 +217,7 @@ if(estimator %in% c("impute", "all")) {
 	try({
 		impute_first_stage = stats::as.formula(glue::glue("~ 1 + {xformla_null} + i({tname}) | {idname}"))
 
-		tidy_impute = didimputation::did_imputation(data,
+		tidy_impute = didimputation::did_imputation(data, cluster_var = cluster_var,
 									 yname = yname, gname = gname, tname = tname, idname = idname,
 									 first_stage = impute_first_stage, horizon = TRUE, pretrends = TRUE)
 
