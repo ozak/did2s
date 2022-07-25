@@ -26,7 +26,7 @@
 #' plot_event_study(out)
 #' }
 #' @export
-event_study = function(data, yname, idname, gname, tname,
+event_study = function(data, yname, idname, gname, tname, cluster_var=NULL,
 					   xformla = NULL, weights = NULL,
 					   estimator = c("all", "TWFE", "did2s", "did", "impute", "sunab",
 					   			  "staggered")
@@ -93,8 +93,11 @@ event_study = function(data, yname, idname, gname, tname,
 	} else {
 		xformla_null = "0"
 	}
-
-
+	
+	# Check cluster variable
+	if(is.null(cluster_var)) {
+		cluster_var = idname
+	}
 
 # initialize empty arguments
 tidy_twfe = NULL
@@ -110,7 +113,7 @@ if(estimator %in% c("TWFE", "all")) {
 
 	try({
 		twfe_formula = stats::as.formula(glue::glue("{yname} ~ 1 + {xformla_null} + i(zz000event_time, ref = -1) | {idname} + {tname}"))
-		est_twfe = fixest::feols(twfe_formula, data = data, warn = F, notes = F)
+		est_twfe = fixest::feols(twfe_formula, data = data, warn = F, notes = F, cluster = c(cluster_var))
 
 		# Extract coefficients and standard errors
 		tidy_twfe = broom::tidy(est_twfe)
@@ -136,7 +139,7 @@ if(estimator %in% c("did2s", "all")) {
 	try({
 		did2s_first_stage = stats::as.formula(glue::glue("~ 0 + {xformla_null} | {idname} + {tname}"))
 
-		est_did2s = did2s::did2s(data, yname = yname, first_stage = did2s_first_stage, second_stage = ~i(zz000event_time, ref=-Inf), treatment = "zz000treat", cluster_var = idname, verbose = FALSE)
+		est_did2s = did2s::did2s(data, yname = yname, first_stage = did2s_first_stage, second_stage = ~i(zz000event_time, ref=-Inf), treatment = "zz000treat", cluster_var = cluster_var, verbose = FALSE)
 
 		# Extract coefficients and standard errors
 		tidy_did2s = broom::tidy(est_did2s)
@@ -160,7 +163,7 @@ if(estimator %in% c("did", "all")) {
 	cli::cli_text("Estimating using Callaway and Sant'Anna (2020)")
 
 	try({
-		est_did = did::att_gt(yname = yname, tname = tname, idname = idname, gname = gname, xformla = xformla, data = data)
+		est_did = did::att_gt(yname = yname, tname = tname, idname = idname, gname = gname, xformla = xformla, data = data, clustervars = c(cluster_var))
 
 		est_did = did::aggte(est_did, type = "dynamic", na.rm = TRUE)
 
@@ -189,7 +192,7 @@ if(estimator %in% c("sunab", "all")) {
 
 		sunab_formla = stats::as.formula(glue::glue("{yname} ~ {sunab_xformla} + sunab({gname}, zz000event_time, ref.c =0, ref.p = -1) | {idname} + {tname}"))
 
-		est_sunab = fixest::feols(sunab_formla, data = data)
+		est_sunab = fixest::feols(sunab_formla, data = data, cluster = c(cluster_var))
 
 		tidy_sunab = broom::tidy(est_sunab)
 
